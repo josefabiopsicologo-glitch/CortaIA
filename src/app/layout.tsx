@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CortaIA",
-  description: "CortaIA — web application",
+  title: "CortaIA — Editor de vídeo",
+  description:
+    "Editor inteligente de vídeos para Reels, TikTok e YouTube Shorts.",
 };
 
 export default function RootLayout({

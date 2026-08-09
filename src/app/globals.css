@@ -2,16 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * CortaIA — Tema "Dark Professional".
+ * O editor é uma aplicação de tela cheia; assumimos deliberadamente o tema
+ * escuro como identidade do produto (ver docs/ARCHITECTURE.md).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0d0f12;
+  --panel: #15181e;
+  --elevated: #1b1f27;
+  --border: #292e38;
+  --foreground: #f5f7fa;
+  --muted: #9ca3af;
+  --accent: #14a0c0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
@@ -19,4 +27,22 @@ body {
   background: var(--background);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
     sans-serif;
+  overflow: hidden; /* o editor gerencia seu próprio scroll interno */
+}
+
+/* Scrollbars discretas coerentes com o tema. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
