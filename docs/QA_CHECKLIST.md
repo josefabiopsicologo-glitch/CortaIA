@@ -40,6 +40,8 @@ validado ainda) · **N/A** (não implementado).
 | 12 | Trim por handles | PASS | resize da borda validado via Playwright (+120px) |
 | 12b | Arrastar clip (mover) + snap + Undo | PASS | move +100px e Undo (1 passo) validados via Playwright |
 | 13 | Delete funciona | PASS (lógica) / NOT TESTED (UI manual) | store testado |
+| 13b | Duplicar (Ctrl+D) + nudge (setas) | PASS | validado via Playwright (1→2 clips, cópia deslocada) |
+| 13c | Remover mídia + revoga Object URL | PASS (lógica) | store testado (asset + clips removidos) |
 | 14 | Texto funciona | PASS | add título → canvas + timeline + propriedades |
 | 15 | Áudio funciona | NOT TESTED | upload/track implementados; playback pendente |
 | 16 | Volume funciona | NOT TESTED | controle implementado |

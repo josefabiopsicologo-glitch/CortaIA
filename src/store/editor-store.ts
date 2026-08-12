@@ -41,6 +41,18 @@ function touch(project: Project): Project {
   return { ...project, updatedAt: Date.now() };
 }
 
+/** Revoga um Object URL de mídia com segurança (no-op fora do browser). */
+function revokeSource(source: string | undefined): void {
+  if (
+    source &&
+    source.startsWith("blob:") &&
+    typeof URL !== "undefined" &&
+    typeof URL.revokeObjectURL === "function"
+  ) {
+    URL.revokeObjectURL(source);
+  }
+}
+
 export interface EditorState {
   project: Project;
   selectedClipId: string | null;
@@ -56,11 +68,17 @@ export interface EditorState {
   addAsset: (asset: Asset) => void;
   /** Adiciona o asset e cria um clip correspondente na faixa apropriada. */
   addAssetWithClip: (asset: Asset) => string;
+  /** Remove um asset, seus clips e revoga o Object URL da mídia. */
+  removeAsset: (assetId: string) => void;
 
   // --- Clips ---
   addTextClip: (overrides?: Partial<TextClip>) => string;
   selectClip: (clipId: string | null) => void;
   removeClip: (clipId: string) => void;
+  /** Duplica um clip logo após o original, na mesma faixa. Retorna o novo id. */
+  duplicateClip: (clipId: string) => string | null;
+  /** Desloca o clip na timeline por um delta em segundos (nunca negativo). */
+  nudgeClip: (clipId: string, deltaSeconds: number) => void;
   moveClip: (clipId: string, timelineStart: number) => void;
   updateClip: (clipId: string, patch: Partial<MediaClip>) => void;
   updateTextClip: (clipId: string, patch: Partial<TextClip>) => void;
@@ -112,13 +130,17 @@ export const useEditorStore = create<EditorState>((set, get) => {
     past: [],
     future: [],
 
-    newProject: (name, aspectRatio) =>
+    newProject: (name, aspectRatio) => {
+      for (const asset of Object.values(get().project.assets)) {
+        revokeSource(asset.source);
+      }
       set({
         project: createEmptyProject(name, aspectRatio),
         selectedClipId: null,
         past: [],
         future: [],
-      }),
+      });
+    },
 
     setProjectName: (name) => commit((p) => ({ ...p, name })),
 
@@ -145,6 +167,30 @@ export const useEditorStore = create<EditorState>((set, get) => {
       return clip.id;
     },
 
+    removeAsset: (assetId) => {
+      const asset = get().project.assets[assetId];
+      commit((p) => {
+        const assets = { ...p.assets };
+        delete assets[assetId];
+        const clips = { ...p.clips };
+        const removedIds = new Set<string>();
+        for (const clip of Object.values(p.clips)) {
+          if (isMediaClip(clip) && clip.assetId === assetId) {
+            delete clips[clip.id];
+            removedIds.add(clip.id);
+          }
+        }
+        const tracks = p.tracks.map((t) => ({
+          ...t,
+          clipIds: t.clipIds.filter((id) => !removedIds.has(id)),
+        }));
+        return { ...p, assets, clips, tracks };
+      });
+      revokeSource(asset?.source);
+      const sel = get().selectedClipId;
+      if (sel && !get().project.clips[sel]) set({ selectedClipId: null });
+    },
+
     addTextClip: (overrides) => {
       const clip = createTextClip(DEFAULT_TRACK_IDS.text, overrides);
       commit((p) => addClipToTrack(p, clip));
@@ -166,6 +212,40 @@ export const useEditorStore = create<EditorState>((set, get) => {
       });
       if (get().selectedClipId === clipId) set({ selectedClipId: null });
     },
+
+    duplicateClip: (clipId) => {
+      const original = get().project.clips[clipId];
+      if (!original) return null;
+      const newId = createId("clip");
+      const copy: Clip = {
+        ...original,
+        id: newId,
+        timelineStart: original.timelineStart + original.duration,
+      };
+      commit((p) => {
+        const tracks = p.tracks.map((t) => {
+          if (t.id !== original.trackId) return t;
+          const idx = t.clipIds.indexOf(clipId);
+          const clipIds = [...t.clipIds];
+          clipIds.splice(idx + 1, 0, newId);
+          return { ...t, clipIds };
+        });
+        return { ...p, tracks, clips: { ...p.clips, [newId]: copy } };
+      });
+      set({ selectedClipId: newId });
+      return newId;
+    },
+
+    nudgeClip: (clipId, deltaSeconds) =>
+      commit((p) => {
+        const clip = p.clips[clipId];
+        if (!clip) return p;
+        const next = {
+          ...clip,
+          timelineStart: Math.max(0, clip.timelineStart + deltaSeconds),
+        };
+        return { ...p, clips: { ...p.clips, [clipId]: next } };
+      }),
 
     moveClip: (clipId, timelineStart) =>
       commit((p) => {

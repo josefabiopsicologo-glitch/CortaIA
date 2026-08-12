@@ -50,12 +50,33 @@ export function useKeyboardShortcuts(): void {
         return;
       }
 
+      // Duplicar clip selecionado
+      if (mod && e.key.toLowerCase() === "d") {
+        const id = editor.selectedClipId;
+        if (id) {
+          e.preventDefault();
+          editor.duplicateClip(id);
+        }
+        return;
+      }
+
       // Delete clip selecionado
       if (e.key === "Delete" || e.key === "Backspace") {
         const id = editor.selectedClipId;
         if (id) {
           e.preventDefault();
           editor.removeClip(id);
+        }
+        return;
+      }
+
+      // Nudge do clip selecionado com as setas (Shift = passo maior)
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        const id = editor.selectedClipId;
+        if (id) {
+          e.preventDefault();
+          const step = e.shiftKey ? 1 : 0.1;
+          editor.nudgeClip(id, e.key === "ArrowRight" ? step : -step);
         }
         return;
       }

@@ -11,6 +11,7 @@ import {
   MediaIcon,
   SparklesIcon,
   TextIcon,
+  TrashIcon,
   UploadIcon,
 } from "@/components/ui/icons";
 
@@ -88,6 +89,7 @@ function MediaPanel({ accept }: { accept: "video" | "audio" }) {
 
   const assets = useEditorStore((s) => s.project.assets);
   const addAssetWithClip = useEditorStore((s) => s.addAssetWithClip);
+  const removeAsset = useEditorStore((s) => s.removeAsset);
 
   const list = Object.values(assets).filter((a) =>
     accept === "audio" ? a.type === "audio" : a.type !== "audio",
@@ -153,7 +155,7 @@ function MediaPanel({ accept }: { accept: "video" | "audio" }) {
         {list.map((asset) => (
           <div
             key={asset.id}
-            className="flex items-center gap-3 rounded-md border border-border bg-elevated px-2 py-2"
+            className="group flex items-center gap-3 rounded-md border border-border bg-elevated px-2 py-2"
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-background text-accent">
               {asset.type === "audio" ? <AudioIcon size={16} /> : <MediaIcon size={16} />}
@@ -164,6 +166,15 @@ function MediaPanel({ accept }: { accept: "video" | "audio" }) {
                 {asset.type === "image" ? "imagem" : formatTimecode(asset.duration)}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => removeAsset(asset.id)}
+              title="Remover mídia"
+              aria-label={`Remover ${asset.name}`}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
+            >
+              <TrashIcon size={14} />
+            </button>
           </div>
         ))}
       </div>

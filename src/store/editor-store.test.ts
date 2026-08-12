@@ -105,6 +105,38 @@ describe("editor-store", () => {
     expect(useEditorStore.getState().canRedo()).toBe(false);
   });
 
+  it("duplica um clip logo após o original, na mesma faixa", () => {
+    const clipId = useEditorStore.getState().addAssetWithClip(videoAsset);
+    const original = useEditorStore.getState().project.clips[clipId];
+    const newId = useEditorStore.getState().duplicateClip(clipId);
+    expect(newId).not.toBeNull();
+    const s = useEditorStore.getState();
+    const copy = s.project.clips[newId!];
+    expect(copy.timelineStart).toBe(original.timelineStart + original.duration);
+    expect(s.selectedClipId).toBe(newId);
+    const track = s.project.tracks.find((t) => t.id === DEFAULT_TRACK_IDS.video)!;
+    expect(track.clipIds).toEqual([clipId, newId]);
+  });
+
+  it("faz nudge do clip sem passar de zero", () => {
+    const clipId = useEditorStore.getState().addAssetWithClip(videoAsset);
+    useEditorStore.getState().nudgeClip(clipId, 2);
+    expect(useEditorStore.getState().project.clips[clipId].timelineStart).toBe(2);
+    useEditorStore.getState().nudgeClip(clipId, -10);
+    expect(useEditorStore.getState().project.clips[clipId].timelineStart).toBe(0);
+  });
+
+  it("remove asset junto com seus clips e limpa a seleção", () => {
+    const clipId = useEditorStore.getState().addAssetWithClip(videoAsset);
+    useEditorStore.getState().removeAsset(videoAsset.id);
+    const s = useEditorStore.getState();
+    expect(s.project.assets[videoAsset.id]).toBeUndefined();
+    expect(s.project.clips[clipId]).toBeUndefined();
+    expect(s.selectedClipId).toBeNull();
+    const track = s.project.tracks.find((t) => t.id === DEFAULT_TRACK_IDS.video)!;
+    expect(track.clipIds).not.toContain(clipId);
+  });
+
   it("troca o aspect ratio", () => {
     useEditorStore.getState().setAspectRatio("16:9");
     const c = useEditorStore.getState().project.canvas;
