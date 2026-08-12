@@ -27,7 +27,12 @@ function readVideoMetadata(url: string): Promise<MediaMetadata> {
         height: video.videoHeight,
       });
     };
-    video.onerror = () => reject(new Error("Não foi possível abrir este vídeo."));
+    video.onerror = () =>
+      reject(
+        new Error(
+          "Não foi possível abrir este vídeo — o codec pode não ser suportado por este navegador (ex.: H.264/HEVC).",
+        ),
+      );
     video.src = url;
   });
 }
@@ -37,7 +42,12 @@ function readAudioMetadata(url: string): Promise<MediaMetadata> {
     const audio = document.createElement("audio");
     audio.preload = "metadata";
     audio.onloadedmetadata = () => resolve({ duration: audio.duration });
-    audio.onerror = () => reject(new Error("Não foi possível abrir este áudio."));
+    audio.onerror = () =>
+      reject(
+        new Error(
+          "Não foi possível abrir este áudio — o codec pode não ser suportado por este navegador.",
+        ),
+      );
     audio.src = url;
   });
 }
