@@ -88,11 +88,16 @@ Ver `docs/ARCHITECTURE.md` para detalhes.
 - **FASE 6 — Timeline interativa**: arrastar clip para mover, handles de trim
   nas bordas (mídia via source in/out; texto via duração), snap ao playhead e
   às bordas vizinhas, com um único passo de Undo por gesto.
+- **FASE 10/11 — Exportação (parcial)**: `ExportService` (Project → RenderPlan →
+  engine, validação e estados) + `CanvasRecorderEngine` (canvas + MediaRecorder
+  → WebM). Botão Exportar + diálogo com progresso real, erros e download.
+  Export validado E2E (importar WebM → exportar → arquivo real).
 
 ## Limitações conhecidas
 
 - Preview mostra **um** clip de vídeo (composição multi-clip é da exportação).
-- **Exportação ainda não implementada** (botão desabilitado).
+- Exportação atual gera **WebM** (VP9/VP8) de um clip de vídeo + textos; MP4/
+  H.264 e composição multi-clip exigem o engine FFmpeg (pendente).
 - Playback de vídeo real não validado neste ambiente headless (ver QA_CHECKLIST).
 
 ## Próximos passos

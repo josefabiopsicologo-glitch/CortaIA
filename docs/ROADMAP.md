@@ -24,17 +24,18 @@ exportar → abrir o arquivo exportado → confirmar que corresponde à edição
 | 7 | Texto (add, propriedades, canvas, timeline) | ✅ Concluída |
 | 8 | Formatos 9:16 / 1:1 / 16:9 | ✅ Concluída |
 | 9 | Áudio (track, playback sincronizado, volume, mute) | 🟡 Parcial (upload + track) |
-| 10 | Video Engine (abstração de operações) | ⬜ Pendente |
-| 11 | Exportação (RenderPlan → FFmpeg → MP4) | ⬜ Pendente |
+| 10 | Video Engine (abstração de operações) | 🟡 Parcial (CanvasRecorderEngine WebM; FFmpeg pendente) |
+| 11 | Exportação (RenderPlan → engine → arquivo) | 🟡 Parcial (WebM via canvas+MediaRecorder; MP4/H.264 pendente) |
 | 12 | Undo/Redo | ✅ Concluída |
 | 13 | Polimento (UX, loading, erros, acessibilidade, performance) | ⬜ Contínuo |
 | 14 | QA (checklist completo) | 🟡 Contínuo |
 
 ## Próximas prioridades (curto prazo)
 
-1. **Video Engine** (FASE 10) + **Exportação** (FASE 11) com FFmpeg WASM sob
-   demanda e progresso real. É o que falta para fechar a definição de MVP.
-2. **Áudio**: sincronização de reprodução do áudio com o vídeo no preview.
+1. **Exportação FFmpeg (MP4/H.264)** e **composição multi-clip** na exportação
+   (o WebM atual via canvas+MediaRecorder cobre um clip de vídeo + textos).
+2. **Áudio**: sincronização de reprodução do áudio com o vídeo no preview e
+   inclusão das trilhas de áudio na exportação.
 3. **Timeline**: mover clip entre faixas, seleção múltipla e evitar sobreposição.
 4. **Thumbnails** no clip de vídeo e **waveform** no de áudio (arquitetura já
    prevista; não obrigatórios no primeiro MVP).

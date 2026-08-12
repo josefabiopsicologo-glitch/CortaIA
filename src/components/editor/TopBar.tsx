@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import type { AspectRatio } from "@/types";
 import { CANVAS_PRESETS } from "@/types";
 import { useEditorStore } from "@/store/editor-store";
+import { ExportDialog } from "@/components/export/ExportDialog";
 import {
   ExportIcon,
   RedoIcon,
@@ -20,6 +22,7 @@ export function TopBar() {
   const redo = useEditorStore((s) => s.redo);
   const canUndo = useEditorStore((s) => s.past.length > 0);
   const canRedo = useEditorStore((s) => s.future.length > 0);
+  const [exportOpen, setExportOpen] = useState(false);
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-panel px-4">
@@ -79,14 +82,16 @@ export function TopBar() {
 
         <button
           type="button"
-          disabled
-          title="Exportação chega na próxima fase"
-          className="flex h-8 items-center gap-2 rounded-md bg-accent px-3 text-sm font-medium text-background opacity-60"
+          onClick={() => setExportOpen(true)}
+          title="Exportar vídeo"
+          className="flex h-8 items-center gap-2 rounded-md bg-accent px-3 text-sm font-medium text-background transition-colors hover:bg-accent-hover"
         >
           <ExportIcon size={16} />
           Exportar
         </button>
       </div>
+
+      {exportOpen && <ExportDialog onClose={() => setExportOpen(false)} />}
     </header>
   );
 }

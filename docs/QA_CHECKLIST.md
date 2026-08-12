@@ -5,9 +5,12 @@ validado ainda) · **N/A** (não implementado).
 
 > Regra: nunca marcar PASS sem testar de fato.
 >
-> Última verificação automatizada: build de produção + smoke test com Chromium
-> (Playwright) validando renderização e interação de texto. Fluxos que dependem
-> de um arquivo de vídeo real **não** foram validados neste ambiente headless.
+> Última verificação automatizada: build de produção + testes com Chromium
+> (Playwright) validando renderização, interação de texto, drag/resize na
+> timeline e **exportação de ponta a ponta** (importar um WebM gerado no
+> browser → exportar → arquivo `video/webm` real). O que ainda depende de
+> inspeção humana (playback de vídeo real, conferência visual do resultado)
+> segue marcado como NOT TESTED.
 
 ## Verificações automatizadas (CI local)
 
@@ -44,9 +47,9 @@ validado ainda) · **N/A** (não implementado).
 | 18 | Formato 1:1 | PASS (lógica) / NOT TESTED (UI manual) | preset + teste unitário |
 | 19 | Formato 16:9 | PASS (lógica) / NOT TESTED (UI manual) | preset + teste unitário |
 | 20 | Undo/Redo | PASS (lógica) | store testado (encadeado, limpa future) |
-| 21 | Exportação funciona | N/A | não implementada (FASE 11) |
-| 22 | Vídeo exportado abre | N/A | idem |
-| 23 | Resultado corresponde ao projeto | N/A | idem |
+| 21 | Exportação funciona | PASS | E2E via Playwright: importar WebM → exportar → arquivo real de ~130 KB (`video/webm`) |
+| 22 | Vídeo exportado abre | NOT TESTED | blob WebM válido gerado; abertura em player externo não checada aqui |
+| 23 | Resultado corresponde ao projeto | NOT TESTED | composição (vídeo contain + textos) implementada; conferência visual manual pendente |
 
 ## Como validar manualmente os itens NOT TESTED
 
