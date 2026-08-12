@@ -1,37 +1,18 @@
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        // Tema "Dark Professional" — ver docs/ARCHITECTURE.md (Design).
-        background: "#0D0F12",
-        panel: "#15181E",
-        elevated: "#1B1F27",
-        border: "#292E38",
-        foreground: "#F5F7FA",
-        muted: "#9CA3AF",
-        accent: {
-          DEFAULT: "#14A0C0",
-          hover: "#1AB4D6",
-          muted: "#0E7A94",
+        brand: {
+          DEFAULT: '#7c5cff',
+          600: '#6a48f0',
+          700: '#5a3ad6',
         },
       },
       fontFamily: {
-        sans: [
-          "system-ui",
-          "-apple-system",
-          "Segoe UI",
-          "Roboto",
-          "Helvetica",
-          "Arial",
-          "sans-serif",
-        ],
+        sans: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
       },
     },
   },

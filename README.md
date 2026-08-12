@@ -1,95 +1,75 @@
-# CortaIA
+# CortaIA — Edit Pro 🎬
 
-**Editor inteligente de vídeos** para criação de conteúdo curto — Instagram
-Reels, TikTok e YouTube Shorts — com edição tradicional hoje e edição assistida
-por IA no futuro.
+Editor de vídeo com IA que roda no navegador. Importe um vídeo, corte, gere
+legendas automáticas por IA, aplique cortes automáticos (remoção de silêncios) e
+exporte o resultado em MP4 — tudo processado localmente no cliente via
+**ffmpeg.wasm**, sem enviar o vídeo para um servidor.
 
-> Status: em desenvolvimento ativo. Editor Shell (FASE 1) funcional; exportação
-> e camadas de IA ainda por vir (ver [Roadmap](docs/ROADMAP.md)).
+## Recursos
 
-## Objetivo
-
-Permitir que criadores (psicólogos, professores, especialistas, infoprodutores)
-transformem vídeos brutos em conteúdo pronto para publicar — de forma simples,
-rápida e, no futuro, com ajuda de IA (“transforme este vídeo em 5 Reels”,
-“remova os silêncios”, “coloque legendas”).
-
-A filosofia é construir primeiro um **editor confiável e não destrutivo**, e só
-então adicionar automações e inteligência artificial sobre uma base sólida.
+- **Timeline com cortes** — divida, exclua, reordene e apare trechos do vídeo.
+- **Cortes automáticos (IA)** — detecção de silêncio via Web Audio API que
+  remove pausas e mantém só os melhores momentos.
+- **Legendas automáticas (IA)** — transcrição por Whisper com legendas
+  sincronizadas, exportáveis em `.srt` e/ou queimadas no vídeo.
+- **Exportação em MP4** — renderização no navegador com ffmpeg.wasm.
 
 ## Stack
 
-- [Next.js 15](https://nextjs.org/) (App Router) + React 19
-- TypeScript (strict)
-- Tailwind CSS 3 — tema *Dark Professional*
-- [Zustand](https://github.com/pmndrs/zustand) para estado
-- [Vitest](https://vitest.dev/) para testes
-- Vídeo: FFmpeg / FFmpeg WASM (planejado — ver Roadmap)
+- Next.js 14 (App Router) + React 18 + TypeScript
+- Tailwind CSS
+- `@ffmpeg/ffmpeg` (ffmpeg.wasm) para corte/concatenação/exportação
+- Web Audio API para detecção de silêncio
+- Rota `/api/transcribe` compatível com a API Whisper (OpenAI)
 
-## Requisitos
-
-- Node.js 18.18+ (recomendado 20 ou 22)
-- npm 10+
-
-## Instalação
+## Como rodar
 
 ```bash
 npm install
-```
-
-## Execução
-
-```bash
+cp .env.example .env.local   # opcional: para legendas por IA
 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000).
+Abra http://localhost:3000.
 
-## Testes e verificações
+> **Importante:** o ffmpeg.wasm precisa de um contexto *cross-origin isolated*.
+> Os headers `Cross-Origin-Opener-Policy` e `Cross-Origin-Embedder-Policy` já
+> estão configurados em `next.config.mjs`.
 
-```bash
-npm test           # testes unitários (Vitest)
-npm run typecheck  # checagem de tipos (tsc --noEmit)
-npm run lint       # ESLint
-npm run build      # build de produção
+## Legendas por IA (opcional)
+
+Para gerar legendas automáticas, defina no `.env.local`:
+
+```
+OPENAI_API_KEY=sk-...
+# opcionais:
+OPENAI_BASE_URL=https://api.openai.com/v1
+TRANSCRIBE_MODEL=whisper-1
 ```
 
-## Arquitetura (resumo)
+Sem a chave, a rota `/api/transcribe` retorna `501` e a interface segue
+funcionando (edição, cortes e exportação) — apenas as legendas automáticas
+ficam indisponíveis.
 
-Edição **não destrutiva**: todas as operações (cortar, dividir, mover, texto)
-alteram apenas o estado do projeto; a renderização real acontece só na
-exportação. O estado é normalizado e dividido em dois stores — um persistente
-(projeto + histórico Undo/Redo) e um transitório (playback), para performance.
-
-Detalhes completos em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+## Estrutura
 
 ```
 src/
-  app/            # Next.js App Router (layout, página)
-  components/     # UI (editor, canvas, player, timeline, ui)
-  hooks/          # hooks (atalhos de teclado, etc.)
-  lib/            # lógica pura e testável (time, clip-ops, validation, media)
-  store/          # Zustand (editor-store, playback-store)
-  types/          # modelo de dados (Project, Asset, Clip, Track, Canvas, Render)
-  video-engine/   # abstração de operações de vídeo (planejado)
+  app/
+    api/transcribe/route.ts   # transcrição por IA (server-side)
+    layout.tsx, page.tsx      # shell da aplicação
+  components/
+    Editor.tsx                # orquestrador do Edit Pro
+    VideoPlayer.tsx           # player que reproduz a timeline
+    Timeline.tsx              # trilha de clipes + legendas
+    UploadDropzone.tsx        # importação de vídeo
+    ExportDialog.tsx          # exportação em MP4
+  hooks/
+    useEditorState.ts         # estado + undo/redo
+  lib/
+    silence.ts                # cortes automáticos
+    subtitles.ts              # legendas
+    export.ts                 # pipeline de exportação (ffmpeg)
+    ffmpeg.ts                 # loader do ffmpeg.wasm
+    types.ts, format.ts       # modelos e utilidades
 ```
-
-## Formatos suportados
-
-| Preset  | Resolução   | Plataformas                          |
-| ------- | ----------- | ------------------------------------ |
-| `9:16`  | 1080 × 1920 | Reels · Shorts · TikTok              |
-| `1:1`   | 1080 × 1080 | Instagram                            |
-| `16:9`  | 1920 × 1080 | YouTube                              |
-
-## Limitações atuais
-
-- Preview exibe um único clip de vídeo (composição completa fica para a
-  exportação).
-- Exportação ainda não implementada.
-- Trim por handles visuais pendente (a lógica pura já existe e é testada).
-
-## Roadmap
-
-Ver [docs/ROADMAP.md](docs/ROADMAP.md). Qualidade das checagens manuais em
-[docs/QA_CHECKLIST.md](docs/QA_CHECKLIST.md).

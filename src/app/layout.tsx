@@ -1,17 +1,12 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "CortaIA — Editor de vídeo",
-  description:
-    "Editor inteligente de vídeos para Reels, TikTok e YouTube Shorts.",
+  title: 'CortaIA — Edit Pro',
+  description: 'Editor de vídeo com IA: timeline, cortes automáticos, legendas por IA e exportação em MP4.',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <body>{children}</body>
