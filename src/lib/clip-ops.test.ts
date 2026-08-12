@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { MediaClip, TextClip } from "@/types";
 import {
   clipTimelineEnd,
+  moveClipTo,
+  resizeTextClip,
+  snapTime,
   splitClip,
   timeIsInsideClip,
   trimMediaClip,
@@ -150,5 +153,52 @@ describe("trimMediaClip", () => {
     const next = trimMediaClip(clip, { sourceStart: 59.99 }, 60);
     // Operação inválida -> clip inalterado.
     expect(next).toEqual(clip);
+  });
+});
+
+describe("moveClipTo", () => {
+  it("move para novo início", () => {
+    expect(moveClipTo(makeMediaClip(), 12).timelineStart).toBe(12);
+  });
+  it("nunca fica negativo", () => {
+    expect(moveClipTo(makeMediaClip(), -5).timelineStart).toBe(0);
+  });
+});
+
+describe("resizeTextClip", () => {
+  it("estende a borda direita", () => {
+    const clip = makeTextClip({ timelineStart: 0, duration: 10 });
+    const next = resizeTextClip(clip, { endDelta: 5 });
+    expect(next.duration).toBe(15);
+    expect(next.timelineStart).toBe(0);
+  });
+  it("move a borda esquerda ajustando início e duração", () => {
+    const clip = makeTextClip({ timelineStart: 4, duration: 10 });
+    const next = resizeTextClip(clip, { startDelta: 3 });
+    expect(next.timelineStart).toBe(7);
+    expect(next.duration).toBe(7);
+  });
+  it("não deixa a borda esquerda passar do início do projeto", () => {
+    const clip = makeTextClip({ timelineStart: 2, duration: 10 });
+    const next = resizeTextClip(clip, { startDelta: -5 });
+    expect(next.timelineStart).toBe(0);
+    expect(next.duration).toBe(12);
+  });
+  it("respeita a duração mínima", () => {
+    const clip = makeTextClip({ timelineStart: 0, duration: 5 });
+    const next = resizeTextClip(clip, { endDelta: -100 }, 0.1);
+    expect(next.duration).toBe(0.1);
+  });
+});
+
+describe("snapTime", () => {
+  it("gruda no alvo mais próximo dentro do limite", () => {
+    expect(snapTime(10.2, [0, 10, 25], 0.5)).toBe(10);
+  });
+  it("mantém o valor quando nenhum alvo está próximo", () => {
+    expect(snapTime(10.2, [0, 25], 0.5)).toBe(10.2);
+  });
+  it("escolhe o alvo mais próximo entre vários", () => {
+    expect(snapTime(9.9, [9.5, 10.0], 1)).toBe(10.0);
   });
 });

@@ -34,7 +34,8 @@ validado ainda) · **N/A** (não implementado).
 | 9 | Playhead acompanha o vídeo | NOT TESTED | sync via rAF implementado |
 | 10 | Timeline funciona (régua, tracks, playhead) | PASS | validado visualmente |
 | 11 | Split funciona | PASS (lógica) / NOT TESTED (UI manual) | `clip-ops`/store testados |
-| 12 | Trim funciona | PASS (lógica) / N/A (handles UI) | `trimMediaClip` testado; handles pendentes |
+| 12 | Trim por handles | PASS | resize da borda validado via Playwright (+120px) |
+| 12b | Arrastar clip (mover) + snap + Undo | PASS | move +100px e Undo (1 passo) validados via Playwright |
 | 13 | Delete funciona | PASS (lógica) / NOT TESTED (UI manual) | store testado |
 | 14 | Texto funciona | PASS | add título → canvas + timeline + propriedades |
 | 15 | Áudio funciona | NOT TESTED | upload/track implementados; playback pendente |

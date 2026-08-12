@@ -3,21 +3,32 @@
 import { useRef, useState } from "react";
 import { useEditorStore } from "@/store/editor-store";
 import { usePlaybackStore } from "@/store/playback-store";
-import type { Clip, Track } from "@/types";
+import type { Asset, Clip, MediaClip, Track } from "@/types";
+import { isMediaClip } from "@/types";
+import {
+  clipTimelineEnd,
+  moveClipTo,
+  resizeTextClip,
+  snapTime,
+  trimMediaClip,
+} from "@/lib/clip-ops";
 import { pixelsToTime, timeToPixels, formatTimecode } from "@/lib/time";
 import { SplitIcon, TrashIcon } from "@/components/ui/icons";
 
-const LABEL_WIDTH = 96; // largura da coluna de rótulos das faixas
+const LABEL_WIDTH = 96;
 const TRACK_HEIGHT = 56;
 const RULER_HEIGHT = 28;
 const MIN_TIMELINE_SECONDS = 12;
+const SNAP_PIXELS = 8;
+const DRAG_THRESHOLD_PX = 3;
 
 export function Timeline() {
-  const [pps, setPps] = useState(48); // pixels por segundo (zoom)
+  const [pps, setPps] = useState(48);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const tracks = useEditorStore((s) => s.project.tracks);
   const clips = useEditorStore((s) => s.project.clips);
+  const assets = useEditorStore((s) => s.project.assets);
   const selectedId = useEditorStore((s) => s.selectedClipId);
   const selectClip = useEditorStore((s) => s.selectClip);
   const splitClipAt = useEditorStore((s) => s.splitClipAt);
@@ -36,7 +47,7 @@ export function Timeline() {
   const totalSeconds = Math.max(duration + 4, MIN_TIMELINE_SECONDS);
   const contentWidth = timeToPixels(totalSeconds, pps);
 
-  function handleScrub(e: React.MouseEvent<HTMLDivElement>) {
+  function handleScrub(e: React.PointerEvent<HTMLDivElement>) {
     const el = contentRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -87,7 +98,6 @@ export function Timeline() {
 
       {/* Corpo: rótulos fixos + área rolável */}
       <div className="flex min-h-0 flex-1">
-        {/* Coluna de rótulos */}
         <div
           className="shrink-0 border-r border-border bg-panel"
           style={{ width: LABEL_WIDTH }}
@@ -104,7 +114,6 @@ export function Timeline() {
           ))}
         </div>
 
-        {/* Área rolável */}
         <div ref={contentRef} className="relative min-w-0 flex-1 overflow-x-auto">
           <div style={{ width: contentWidth, minWidth: "100%" }}>
             <Ruler totalSeconds={totalSeconds} pps={pps} onScrub={handleScrub} />
@@ -114,15 +123,16 @@ export function Timeline() {
                 key={track.id}
                 track={track}
                 clips={clips}
+                assets={assets}
                 pps={pps}
                 selectedId={selectedId}
+                currentTime={currentTime}
                 onSelectClip={selectClip}
                 onScrub={handleScrub}
               />
             ))}
           </div>
 
-          {/* Playhead */}
           <div
             className="pointer-events-none absolute top-0 z-10 w-px bg-accent"
             style={{
@@ -145,16 +155,15 @@ function Ruler({
 }: {
   totalSeconds: number;
   pps: number;
-  onScrub: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onScrub: (e: React.PointerEvent<HTMLDivElement>) => void;
 }) {
-  // Intervalo de rótulos adaptativo para não poluir em zoom baixo.
   const step = pps < 24 ? 5 : pps < 60 ? 2 : 1;
   const marks: number[] = [];
   for (let s = 0; s <= totalSeconds; s += step) marks.push(s);
 
   return (
     <div
-      onMouseDown={onScrub}
+      onPointerDown={onScrub}
       className="relative cursor-pointer border-b border-border bg-elevated/40"
       style={{ height: RULER_HEIGHT }}
     >
@@ -186,51 +195,196 @@ const CLIP_STYLES: Record<
 function TrackRow({
   track,
   clips,
+  assets,
   pps,
   selectedId,
+  currentTime,
   onSelectClip,
   onScrub,
 }: {
   track: Track;
   clips: Record<string, Clip>;
+  assets: Record<string, Asset>;
   pps: number;
   selectedId: string | null;
+  currentTime: number;
   onSelectClip: (id: string) => void;
-  onScrub: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onScrub: (e: React.PointerEvent<HTMLDivElement>) => void;
 }) {
   const style = CLIP_STYLES[track.type];
+
+  // Alvos de snap: início do projeto, playhead e bordas de todos os clips.
+  const snapTargets = [0, currentTime];
+  for (const c of Object.values(clips)) {
+    snapTargets.push(c.timelineStart, clipTimelineEnd(c));
+  }
+
   return (
     <div
-      onMouseDown={onScrub}
+      onPointerDown={onScrub}
       className="relative border-b border-border"
       style={{ height: TRACK_HEIGHT }}
     >
       {track.clipIds.map((id) => {
         const clip = clips[id];
         if (!clip) return null;
-        const selected = selectedId === id;
-        const label =
-          clip.type === "text" && "text" in clip ? clip.text : clip.type;
         return (
-          <button
+          <TimelineClip
             key={id}
-            type="button"
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              onSelectClip(id);
-            }}
-            className={`absolute top-1.5 flex h-[calc(100%-12px)] items-center overflow-hidden rounded-md border px-2 text-left text-[11px] transition-shadow ${style.bg} ${style.text} ${
-              selected ? "border-accent ring-2 ring-accent" : style.border
-            }`}
-            style={{
-              left: timeToPixels(clip.timelineStart, pps),
-              width: Math.max(timeToPixels(clip.duration, pps), 8),
-            }}
-          >
-            <span className="truncate">{label}</span>
-          </button>
+            clip={clip}
+            asset={isMediaClip(clip) ? assets[clip.assetId] : undefined}
+            pps={pps}
+            selected={selectedId === id}
+            style={style}
+            snapTargets={snapTargets}
+            onSelect={onSelectClip}
+          />
         );
       })}
+    </div>
+  );
+}
+
+type DragMode = "move" | "trim-start" | "trim-end";
+interface DragState {
+  mode: DragMode;
+  startX: number;
+  original: Clip;
+  started: boolean;
+}
+
+function TimelineClip({
+  clip,
+  asset,
+  pps,
+  selected,
+  style,
+  snapTargets,
+  onSelect,
+}: {
+  clip: Clip;
+  asset?: Asset;
+  pps: number;
+  selected: boolean;
+  style: { bg: string; border: string; text: string };
+  snapTargets: number[];
+  onSelect: (id: string) => void;
+}) {
+  const beginInteraction = useEditorStore((s) => s.beginInteraction);
+  const replaceClipTransient = useEditorStore((s) => s.replaceClipTransient);
+  const drag = useRef<DragState | null>(null);
+
+  const label = clip.type === "text" && "text" in clip ? clip.text : clip.type;
+  const snapThreshold = SNAP_PIXELS / pps;
+  const assetDuration = asset?.duration ?? (isMediaClip(clip) ? clip.sourceEnd : 0);
+
+  function start(mode: DragMode, e: React.PointerEvent<HTMLElement>) {
+    e.stopPropagation();
+    e.preventDefault();
+    onSelect(clip.id);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    drag.current = {
+      mode,
+      startX: e.clientX,
+      original: useEditorStore.getState().project.clips[clip.id] ?? clip,
+      started: false,
+    };
+  }
+
+  function move(e: React.PointerEvent<HTMLElement>) {
+    const d = drag.current;
+    if (!d) return;
+    const dxPx = e.clientX - d.startX;
+    if (!d.started) {
+      if (Math.abs(dxPx) < DRAG_THRESHOLD_PX) return;
+      d.started = true;
+      beginInteraction(); // um único ponto de undo por gesto
+    }
+    const dt = pixelsToTime(dxPx, pps);
+    const original = d.original;
+
+    if (d.mode === "move") {
+      const desired = original.timelineStart + dt;
+      const snappedStart = snapTime(desired, snapTargets, snapThreshold);
+      // Também tenta grudar a borda direita.
+      const endDesired = snappedStart + original.duration;
+      const snappedEnd = snapTime(endDesired, snapTargets, snapThreshold);
+      const finalStart =
+        snappedEnd !== endDesired ? snappedEnd - original.duration : snappedStart;
+      replaceClipTransient(moveClipTo(original, finalStart));
+      return;
+    }
+
+    if (d.mode === "trim-start") {
+      const desiredEdge = original.timelineStart + dt;
+      const edge = snapTime(desiredEdge, snapTargets, snapThreshold);
+      const delta = edge - original.timelineStart;
+      const next = isMediaClip(original)
+        ? trimMediaClip(
+            original as MediaClip,
+            { sourceStart: (original as MediaClip).sourceStart + delta },
+            assetDuration,
+          )
+        : resizeTextClip(original, { startDelta: delta });
+      replaceClipTransient(next);
+      return;
+    }
+
+    // trim-end
+    const desiredEdge = clipTimelineEnd(original) + dt;
+    const edge = snapTime(desiredEdge, snapTargets, snapThreshold);
+    const delta = edge - clipTimelineEnd(original);
+    const next = isMediaClip(original)
+      ? trimMediaClip(
+          original as MediaClip,
+          { sourceEnd: (original as MediaClip).sourceEnd + delta },
+          assetDuration,
+        )
+      : resizeTextClip(original, { endDelta: delta });
+    replaceClipTransient(next);
+  }
+
+  function end(e: React.PointerEvent<HTMLElement>) {
+    if (drag.current) {
+      (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+    }
+    drag.current = null;
+  }
+
+  const left = timeToPixels(clip.timelineStart, pps);
+  const width = Math.max(timeToPixels(clip.duration, pps), 10);
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Clip ${label}`}
+      onPointerDown={(e) => start("move", e)}
+      onPointerMove={move}
+      onPointerUp={end}
+      onPointerCancel={end}
+      className={`group absolute top-1.5 flex h-[calc(100%-12px)] cursor-grab touch-none items-center overflow-hidden rounded-md border px-2 text-left text-[11px] active:cursor-grabbing ${style.bg} ${style.text} ${
+        selected ? "border-accent ring-2 ring-accent" : style.border
+      }`}
+      style={{ left, width }}
+    >
+      {/* Handle esquerdo */}
+      <span
+        onPointerDown={(e) => start("trim-start", e)}
+        onPointerMove={move}
+        onPointerUp={end}
+        onPointerCancel={end}
+        className="absolute left-0 top-0 h-full w-2 cursor-col-resize bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"
+      />
+      <span className="pointer-events-none truncate">{label}</span>
+      {/* Handle direito */}
+      <span
+        onPointerDown={(e) => start("trim-end", e)}
+        onPointerMove={move}
+        onPointerUp={end}
+        onPointerCancel={end}
+        className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"
+      />
     </div>
   );
 }

@@ -67,6 +67,12 @@ export interface EditorState {
   splitClipAt: (clipId: string, atTime: number) => string | null;
   trimClip: (clipId: string, trim: TrimInput) => void;
 
+  // --- Gestos (drag/resize) ---
+  /** Registra um ponto de undo antes de um gesto contínuo (arrastar/redimensionar). */
+  beginInteraction: () => void;
+  /** Substitui um clip sem tocar no histórico (updates transitórios do gesto). */
+  replaceClipTransient: (clip: Clip) => void;
+
   // --- Histórico ---
   undo: () => void;
   redo: () => void;
@@ -217,6 +223,20 @@ export const useEditorStore = create<EditorState>((set, get) => {
         const next = trimMediaClip(clip, trim, assetDuration);
         return { ...p, clips: { ...p.clips, [clipId]: next } };
       }),
+
+    beginInteraction: () =>
+      set((state) => ({
+        past: [...state.past, state.project].slice(-HISTORY_LIMIT),
+        future: [],
+      })),
+
+    replaceClipTransient: (clip) =>
+      set((state) => ({
+        project: {
+          ...state.project,
+          clips: { ...state.project.clips, [clip.id]: clip },
+        },
+      })),
 
     undo: () =>
       set((state) => {

@@ -18,9 +18,9 @@ exportar → abrir o arquivo exportado → confirmar que corresponde à edição
 | 1 | Editor Shell (TopBar, Sidebar, Canvas, Properties, Timeline) | ✅ Concluída |
 | 2 | Modelo de dados + store + testes | ✅ Concluída |
 | 3 | Upload + Player robustos (metadata, seek, múltiplos clips) | 🟡 Parcial (upload + preview single-clip) |
-| 4 | Timeline (trim por handles, snap, seleção múltipla) | 🟡 Parcial (régua, playhead, split, zoom) |
+| 4 | Timeline (arrastar para mover, snap; seleção múltipla pendente) | 🟡 Parcial (régua, playhead, split, zoom, drag, snap) |
 | 5 | Split + Delete + atalhos | ✅ Concluída |
-| 6 | Trim (handles visuais; lógica pura já testada) | ⬜ Pendente |
+| 6 | Trim por handles (bordas arrastáveis) | ✅ Concluída |
 | 7 | Texto (add, propriedades, canvas, timeline) | ✅ Concluída |
 | 8 | Formatos 9:16 / 1:1 / 16:9 | ✅ Concluída |
 | 9 | Áudio (track, playback sincronizado, volume, mute) | 🟡 Parcial (upload + track) |
@@ -32,13 +32,11 @@ exportar → abrir o arquivo exportado → confirmar que corresponde à edição
 
 ## Próximas prioridades (curto prazo)
 
-1. **Trim por handles** na timeline (FASE 6) — a lógica `trimMediaClip` já existe
-   e é testada; falta a UI de arrastar bordas.
-2. **Drag & drop** de clips na timeline e **snap** ao playhead/vizinhos.
-3. **Video Engine** (FASE 10) + **Exportação** (FASE 11) com FFmpeg WASM sob
-   demanda e progresso real.
-4. **Áudio**: sincronização de reprodução do áudio com o vídeo no preview.
-5. **Thumbnails** no clip de vídeo e **waveform** no de áudio (arquitetura já
+1. **Video Engine** (FASE 10) + **Exportação** (FASE 11) com FFmpeg WASM sob
+   demanda e progresso real. É o que falta para fechar a definição de MVP.
+2. **Áudio**: sincronização de reprodução do áudio com o vídeo no preview.
+3. **Timeline**: mover clip entre faixas, seleção múltipla e evitar sobreposição.
+4. **Thumbnails** no clip de vídeo e **waveform** no de áudio (arquitetura já
    prevista; não obrigatórios no primeiro MVP).
 
 ## Futuro (pós-MVP, não implementar agora)

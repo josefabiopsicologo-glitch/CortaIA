@@ -118,3 +118,64 @@ export function trimMediaClip<T extends Clip>(
     timelineStart: newTimelineStart,
   };
 }
+
+/** Move um clip para um novo início na timeline (nunca negativo). */
+export function moveClipTo<T extends Clip>(clip: T, newTimelineStart: number): T {
+  return { ...clip, timelineStart: Math.max(0, newTimelineStart) };
+}
+
+export interface ResizeInput {
+  /** Deslocamento da borda esquerda, em segundos (>0 encolhe pela esquerda). */
+  startDelta?: number;
+  /** Deslocamento da borda direita, em segundos (>0 estende à direita). */
+  endDelta?: number;
+}
+
+/**
+ * Redimensiona um TextClip pelas bordas (sem noção de fonte de mídia).
+ * A borda esquerda move `timelineStart` e ajusta a duração; a direita ajusta
+ * apenas a duração. Respeita duração mínima e início não-negativo.
+ */
+export function resizeTextClip<T extends Clip>(
+  clip: T,
+  { startDelta = 0, endDelta = 0 }: ResizeInput,
+  minDuration = 0.1,
+): T {
+  let { timelineStart, duration } = clip;
+
+  if (startDelta !== 0) {
+    // Limita para não passar do início do projeto nem abaixo da duração mínima.
+    const maxDelta = duration - minDuration;
+    const minDelta = -timelineStart;
+    const d = clamp(startDelta, minDelta, maxDelta);
+    timelineStart += d;
+    duration -= d;
+  }
+
+  if (endDelta !== 0) {
+    duration = Math.max(minDuration, duration + endDelta);
+  }
+
+  return { ...clip, timelineStart, duration };
+}
+
+/**
+ * Ajusta um instante ao alvo mais próximo dentro de `threshold` (segundos).
+ * Usado para "snap" da timeline ao playhead e às bordas de outros clips.
+ */
+export function snapTime(
+  time: number,
+  targets: number[],
+  threshold: number,
+): number {
+  let best = time;
+  let bestDist = threshold;
+  for (const t of targets) {
+    const dist = Math.abs(t - time);
+    if (dist <= bestDist) {
+      best = t;
+      bestDist = dist;
+    }
+  }
+  return best;
+}

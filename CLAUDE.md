@@ -80,17 +80,19 @@ Ver `docs/ARCHITECTURE.md` para detalhes.
 
 - Setup do projeto + correção de vulnerabilidades (overrides de `postcss`/`sharp`).
 - Modelo de dados completo + stores + utilitários de tempo/validação.
-- **43 testes** (time, clip-ops, validation, canvas, editor-store).
+- **57 testes** (time, clip-ops, validation, canvas, editor-store, render-plan).
 - **FASE 1 — Editor Shell**: TopBar, Sidebar (Mídia/Texto/Áudio/Legendas/IA),
   Canvas/Player, Properties, Timeline (régua, playhead, 3 tracks, split/delete,
   zoom). Upload real de mídia, preview de vídeo (single-clip), texto sobreposto,
   troca de formato, Undo/Redo, atalhos.
+- **FASE 6 — Timeline interativa**: arrastar clip para mover, handles de trim
+  nas bordas (mídia via source in/out; texto via duração), snap ao playhead e
+  às bordas vizinhas, com um único passo de Undo por gesto.
 
 ## Limitações conhecidas
 
 - Preview mostra **um** clip de vídeo (composição multi-clip é da exportação).
 - **Exportação ainda não implementada** (botão desabilitado).
-- Trim visual por handles ainda não implementado (lógica pura já existe/testada).
 - Playback de vídeo real não validado neste ambiente headless (ver QA_CHECKLIST).
 
 ## Próximos passos
