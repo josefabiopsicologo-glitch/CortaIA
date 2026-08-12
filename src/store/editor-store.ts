@@ -26,7 +26,12 @@ import {
   createTextClip,
   DEFAULT_TRACK_IDS,
 } from "@/lib/factories";
-import { splitClip, trimMediaClip, type TrimInput } from "@/lib/clip-ops";
+import {
+  clampStartWithinNeighbors,
+  splitClip,
+  trimMediaClip,
+  type TrimInput,
+} from "@/lib/clip-ops";
 import { createId } from "@/lib/id";
 
 const HISTORY_LIMIT = 100;
@@ -80,6 +85,8 @@ export interface EditorState {
   /** Desloca o clip na timeline por um delta em segundos (nunca negativo). */
   nudgeClip: (clipId: string, deltaSeconds: number) => void;
   moveClip: (clipId: string, timelineStart: number) => void;
+  /** Move sem histórico durante um gesto, respeitando os vizinhos da faixa. */
+  moveClipTransient: (clipId: string, timelineStart: number) => void;
   updateClip: (clipId: string, patch: Partial<MediaClip>) => void;
   updateTextClip: (clipId: string, patch: Partial<TextClip>) => void;
   splitClipAt: (clipId: string, atTime: number) => string | null;
@@ -111,6 +118,36 @@ export const useEditorStore = create<EditorState>((set, get) => {
       const past = [...state.past, state.project].slice(-HISTORY_LIMIT);
       return { project: next, past, future: [] };
     });
+  }
+
+  /** Fim do clip anterior e início do próximo, na ordem da faixa. */
+  function neighborsFor(
+    project: Project,
+    clipId: string,
+  ): { prevEnd: number; nextStart: number } {
+    const track = project.tracks.find((t) => t.clipIds.includes(clipId));
+    if (!track) return { prevEnd: 0, nextStart: Infinity };
+    const idx = track.clipIds.indexOf(clipId);
+    const prev = idx > 0 ? project.clips[track.clipIds[idx - 1]] : undefined;
+    const next =
+      idx < track.clipIds.length - 1
+        ? project.clips[track.clipIds[idx + 1]]
+        : undefined;
+    return {
+      prevEnd: prev ? prev.timelineStart + prev.duration : 0,
+      nextStart: next ? next.timelineStart : Infinity,
+    };
+  }
+
+  function clampedStart(
+    project: Project,
+    clipId: string,
+    desiredStart: number,
+  ): number {
+    const clip = project.clips[clipId];
+    if (!clip) return Math.max(0, desiredStart);
+    const { prevEnd, nextStart } = neighborsFor(project, clipId);
+    return clampStartWithinNeighbors(desiredStart, clip.duration, prevEnd, nextStart);
   }
 
   function addClipToTrack(project: Project, clip: Clip): Project {
@@ -240,19 +277,29 @@ export const useEditorStore = create<EditorState>((set, get) => {
       commit((p) => {
         const clip = p.clips[clipId];
         if (!clip) return p;
-        const next = {
-          ...clip,
-          timelineStart: Math.max(0, clip.timelineStart + deltaSeconds),
-        };
-        return { ...p, clips: { ...p.clips, [clipId]: next } };
+        const start = clampedStart(p, clipId, clip.timelineStart + deltaSeconds);
+        return { ...p, clips: { ...p.clips, [clipId]: { ...clip, timelineStart: start } } };
       }),
 
     moveClip: (clipId, timelineStart) =>
       commit((p) => {
         const clip = p.clips[clipId];
         if (!clip) return p;
-        const next = { ...clip, timelineStart: Math.max(0, timelineStart) };
-        return { ...p, clips: { ...p.clips, [clipId]: next } };
+        const start = clampedStart(p, clipId, timelineStart);
+        return { ...p, clips: { ...p.clips, [clipId]: { ...clip, timelineStart: start } } };
+      }),
+
+    moveClipTransient: (clipId, timelineStart) =>
+      set((state) => {
+        const clip = state.project.clips[clipId];
+        if (!clip) return state;
+        const start = clampedStart(state.project, clipId, timelineStart);
+        return {
+          project: {
+            ...state.project,
+            clips: { ...state.project.clips, [clipId]: { ...clip, timelineStart: start } },
+          },
+        };
       }),
 
     updateClip: (clipId, patch) =>

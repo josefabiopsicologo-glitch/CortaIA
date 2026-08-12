@@ -160,6 +160,22 @@ export function resizeTextClip<T extends Clip>(
 }
 
 /**
+ * Restringe o início de um clip para não sobrepor os vizinhos da mesma faixa
+ * (sem reordenar). `prevEnd` é o fim do clip anterior (0 se não houver) e
+ * `nextStart` o início do próximo (Infinity se não houver).
+ */
+export function clampStartWithinNeighbors(
+  desiredStart: number,
+  duration: number,
+  prevEnd = 0,
+  nextStart = Infinity,
+): number {
+  const minStart = Math.max(0, prevEnd);
+  const maxStart = Math.max(minStart, nextStart - duration);
+  return clamp(desiredStart, minStart, maxStart);
+}
+
+/**
  * Ajusta um instante ao alvo mais próximo dentro de `threshold` (segundos).
  * Usado para "snap" da timeline ao playhead e às bordas de outros clips.
  */

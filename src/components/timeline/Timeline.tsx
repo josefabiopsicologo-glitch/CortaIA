@@ -7,7 +7,6 @@ import type { Asset, Clip, MediaClip, Track } from "@/types";
 import { isMediaClip } from "@/types";
 import {
   clipTimelineEnd,
-  moveClipTo,
   resizeTextClip,
   snapTime,
   trimMediaClip,
@@ -272,6 +271,7 @@ function TimelineClip({
 }) {
   const beginInteraction = useEditorStore((s) => s.beginInteraction);
   const replaceClipTransient = useEditorStore((s) => s.replaceClipTransient);
+  const moveClipTransient = useEditorStore((s) => s.moveClipTransient);
   const drag = useRef<DragState | null>(null);
 
   const label = clip.type === "text" && "text" in clip ? clip.text : clip.type;
@@ -311,7 +311,7 @@ function TimelineClip({
       const snappedEnd = snapTime(endDesired, snapTargets, snapThreshold);
       const finalStart =
         snappedEnd !== endDesired ? snappedEnd - original.duration : snappedStart;
-      replaceClipTransient(moveClipTo(original, finalStart));
+      moveClipTransient(clip.id, finalStart);
       return;
     }
 

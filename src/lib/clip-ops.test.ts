@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { MediaClip, TextClip } from "@/types";
 import {
+  clampStartWithinNeighbors,
   clipTimelineEnd,
   moveClipTo,
   resizeTextClip,
@@ -188,6 +189,24 @@ describe("resizeTextClip", () => {
     const clip = makeTextClip({ timelineStart: 0, duration: 5 });
     const next = resizeTextClip(clip, { endDelta: -100 }, 0.1);
     expect(next.duration).toBe(0.1);
+  });
+});
+
+describe("clampStartWithinNeighbors", () => {
+  it("sem vizinhos, apenas evita início negativo", () => {
+    expect(clampStartWithinNeighbors(-5, 10)).toBe(0);
+    expect(clampStartWithinNeighbors(7, 10)).toBe(7);
+  });
+  it("não ultrapassa o próximo clip", () => {
+    // duração 10, próximo começa em 30 -> início máximo 20
+    expect(clampStartWithinNeighbors(25, 10, 0, 30)).toBe(20);
+  });
+  it("não invade o clip anterior", () => {
+    expect(clampStartWithinNeighbors(10, 10, 15)).toBe(15);
+  });
+  it("sem espaço entre vizinhos, fixa após o anterior", () => {
+    // prevEnd 15, nextStart 20, duração 10 -> maxStart(10) < minStart(15)
+    expect(clampStartWithinNeighbors(18, 10, 15, 20)).toBe(15);
   });
 });
 

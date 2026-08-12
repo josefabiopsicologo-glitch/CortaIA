@@ -94,6 +94,7 @@ Ver `docs/ARCHITECTURE.md` para detalhes.
   Export validado E2E (importar WebM → exportar → arquivo real).
 - **FASE 13 — Robustez de edição**: duplicar clip (Ctrl/Cmd+D), nudge com setas
   (Shift = passo maior), remover mídia da biblioteca com revogação de Object URL.
+  Clips não se sobrepõem na faixa (clamp entre vizinhos ao mover/nudge/arrastar).
 - **Atalhos**: Espaço (play/pause), Ctrl/Cmd+Z / Shift+Z (undo/redo), S (dividir),
   Ctrl/Cmd+D (duplicar), ←/→ (nudge), Delete/Backspace (excluir) — desativados
   enquanto se digita em campos.
