@@ -33,6 +33,7 @@ import {
   type TrimInput,
 } from "@/lib/clip-ops";
 import { createId } from "@/lib/id";
+import { clearAssetThumbnail } from "@/lib/thumbnails";
 
 const HISTORY_LIMIT = 100;
 
@@ -224,6 +225,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
         return { ...p, assets, clips, tracks };
       });
       revokeSource(asset?.source);
+      clearAssetThumbnail(assetId);
       const sel = get().selectedClipId;
       if (sel && !get().project.clips[sel]) set({ selectedClipId: null });
     },

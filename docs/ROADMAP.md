@@ -37,8 +37,7 @@ exportar → abrir o arquivo exportado → confirmar que corresponde à edição
 2. **Áudio**: sincronização de reprodução do áudio com o vídeo no preview e
    inclusão das trilhas de áudio na exportação.
 3. **Timeline**: mover clip entre faixas, seleção múltipla e evitar sobreposição.
-4. **Thumbnails** no clip de vídeo e **waveform** no de áudio (arquitetura já
-   prevista; não obrigatórios no primeiro MVP).
+4. **Waveform** no clip de áudio (thumbnails de vídeo/imagem já implementados).
 
 ## Futuro (pós-MVP, não implementar agora)
 

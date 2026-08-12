@@ -43,6 +43,7 @@ validado ainda) · **N/A** (não implementado).
 | 13b | Duplicar (Ctrl+D) + nudge (setas) | PASS | validado via Playwright (1→2 clips, cópia deslocada) |
 | 13c | Remover mídia + revoga Object URL | PASS (lógica) | store testado (asset + clips removidos) |
 | 13d | Clips não se sobrepõem (mover/nudge) | PASS | `clampStartWithinNeighbors` testado + Playwright (drag contra vizinho para no limite) |
+| 13e | Thumbnail no clip de vídeo/imagem | PASS | Playwright: clip de vídeo renderiza `<img>` com data URL (JPEG) |
 | 14 | Texto funciona | PASS | add título → canvas + timeline + propriedades |
 | 15 | Áudio funciona | NOT TESTED | upload/track implementados; playback pendente |
 | 16 | Volume funciona | NOT TESTED | controle implementado |

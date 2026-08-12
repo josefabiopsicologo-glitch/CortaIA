@@ -12,6 +12,7 @@ import {
   trimMediaClip,
 } from "@/lib/clip-ops";
 import { pixelsToTime, timeToPixels, formatTimecode } from "@/lib/time";
+import { useAssetThumbnail } from "@/hooks/useAssetThumbnail";
 import { SplitIcon, TrashIcon } from "@/components/ui/icons";
 
 const LABEL_WIDTH = 96;
@@ -272,6 +273,7 @@ function TimelineClip({
   const beginInteraction = useEditorStore((s) => s.beginInteraction);
   const replaceClipTransient = useEditorStore((s) => s.replaceClipTransient);
   const moveClipTransient = useEditorStore((s) => s.moveClipTransient);
+  const thumbnail = useAssetThumbnail(asset);
   const drag = useRef<DragState | null>(null);
 
   const label = clip.type === "text" && "text" in clip ? clip.text : clip.type;
@@ -368,22 +370,34 @@ function TimelineClip({
       }`}
       style={{ left, width }}
     >
+      {thumbnail && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={thumbnail}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-70"
+          />
+          <span className="pointer-events-none absolute inset-0 bg-black/30" />
+        </>
+      )}
       {/* Handle esquerdo */}
       <span
         onPointerDown={(e) => start("trim-start", e)}
         onPointerMove={move}
         onPointerUp={end}
         onPointerCancel={end}
-        className="absolute left-0 top-0 h-full w-2 cursor-col-resize bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"
+        className="absolute left-0 top-0 z-10 h-full w-2 cursor-col-resize bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"
       />
-      <span className="pointer-events-none truncate">{label}</span>
+      <span className="pointer-events-none relative z-10 truncate drop-shadow">{label}</span>
       {/* Handle direito */}
       <span
         onPointerDown={(e) => start("trim-end", e)}
         onPointerMove={move}
         onPointerUp={end}
         onPointerCancel={end}
-        className="absolute right-0 top-0 h-full w-2 cursor-col-resize bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"
+        className="absolute right-0 top-0 z-10 h-full w-2 cursor-col-resize bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"
       />
     </div>
   );
